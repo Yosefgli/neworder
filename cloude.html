@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת הזמנות</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .hidden {
+            display: none;
+        }
+        .item-list {
+            margin-top: 20px;
+        }
+        .item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .item button {
+            width: auto;
+            margin-right: 5px;
+            background-color: #555;
+        }
+        .delete-btn {
+            background-color: #ff4444 !important;
+        }
+        .barcode-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .barcode-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- מסך ראשון - טופס הזמנה -->
+    <div id="initialForm" class="container">
+        <h2>יצירת הזמנה חדשה</h2>
+        <div class="form-group">
+            <label for="date">תאריך *</label>
+            <input type="date" id="date" required>
+        </div>
+        <div class="form-group">
+            <label for="customerName">שם המזמין *</label>
+            <input type="text" id="customerName" required>
+        </div>
+        <div class="form-group">
+            <label for="notes">הערות</label>
+            <textarea id="notes"></textarea>
+        </div>
+        <button onclick="submitInitialForm()">המשך</button>
+    </div>
+
+    <!-- מסך שני - סורק ברקוד -->
+    <div id="barcodeScanner" class="container hidden">
+        <div class="barcode-container">
+            <div class="barcode-icon">📱</div>
+            <button onclick="simulateScan()">סרוק ברקוד</button>
+        </div>
+        <button onclick="showSummary()" id="finishButton" style="display: none;">סיים הזמנה</button>
+    </div>
+
+    <!-- מסך שלישי - פרטי פריט -->
+    <div id="itemDetails" class="container hidden">
+        <h2>פרטי פריט</h2>
+        <div class="form-group">
+            <label>מזהה מוצר:</label>
+            <input type="text" id="productId" disabled>
+        </div>
+        <div class="form-group">
+            <label>שם מוצר:</label>
+            <input type="text" id="productName" disabled>
+        </div>
+        <div class="form-group">
+            <label>כמות:</label>
+            <input type="number" id="quantity" min="1" value="1">
+        </div>
+        <div class="form-group">
+            <label>יחידה:</label>
+            <select id="unit">
+                <option value="קילו">קילו</option>
+                <option value="יחידה">יחידה</option>
+                <option value="ליטר">ליטר</option>
+                <option value="מטר">מטר</option>
+                <option value="חבילה">חבילה</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>הערות:</label>
+            <textarea id="itemNotes"></textarea>
+        </div>
+        <button onclick="submitItem()">אישור</button>
+    </div>
+
+    <!-- מסך רביעי - סיכום -->
+    <div id="summary" class="container hidden">
+        <h2>סיכום הזמנה</h2>
+        <div id="orderDetails"></div>
+        <div id="itemList" class="item-list"></div>
+        <button onclick="finalizeOrder()">שלח הזמנה</button>
+    </div>
+
+    <script>
+        let orderData = {
+            date: '',
+            customerName: '',
+            notes: '',
+            items: []
+        };
+
+        let currentItem = null;
+
+        function submitInitialForm() {
+            const date = document.getElementById('date').value;
+            const customerName = document.getElementById('customerName').value;
+            
+            if (!date || !customerName) {
+                alert('נא למלא את כל שדות החובה');
+                return;
+            }
+
+            orderData.date = date;
+            orderData.customerName = customerName;
+            orderData.notes = document.getElementById('notes').value;
+
+            document.getElementById('initialForm').classList.add('hidden');
+            document.getElementById('barcodeScanner').classList.remove('hidden');
+        }
+
+        function simulateScan() {
+            // סימולציה של סריקת ברקוד
+            currentItem = {
+                id: 'ITEM' + Math.floor(Math.random() * 1000),
+                name: 'מוצר לדוגמה ' + Math.floor(Math.random() * 100)
+            };
+
+            document.getElementById('productId').value = currentItem.id;
+            document.getElementById('productName').value = currentItem.name;
+            
+            document.getElementById('barcodeScanner').classList.add('hidden');
+            document.getElementById('itemDetails').classList.remove('hidden');
+            document.getElementById('finishButton').style.display = 'block';
+        }
+
+        function submitItem() {
+            const item = {
+                id: currentItem.id,
+                name: currentItem.name,
+                quantity: document.getElementById('quantity').value,
+                unit: document.getElementById('unit').value,
+                notes: document.getElementById('itemNotes').value
+            };
+
+            orderData.items.push(item);
+            
+            // איפוס הטופס
+            document.getElementById('quantity').value = '1';
+            document.getElementById('unit').value = 'קילו';
+            document.getElementById('itemNotes').value = '';
+            
+            document.getElementById('itemDetails').classList.add('hidden');
+            document.getElementById('barcodeScanner').classList.remove('hidden');
+        }
+
+        function showSummary() {
+            document.getElementById('barcodeScanner').classList.add('hidden');
+            document.getElementById('summary').classList.remove('hidden');
+            
+            // הצגת פרטי ההזמנה
+            const orderDetails = document.getElementById('orderDetails');
+            orderDetails.innerHTML = `
+                <p><strong>תאריך:</strong> ${orderData.date}</p>
+                <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
+                ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
+            `;
+
+            renderItems();
+        }
+
+        function renderItems() {
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+            
+            orderData.items.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'item';
+                itemElement.innerHTML = `
+                    <p><strong>שם מוצר:</strong> ${item.name}</p>
+                    <p><strong>כמות:</strong> ${item.quantity} ${item.unit}</p>
+                    ${item.notes ? `<p><strong>הערות:</strong> ${item.notes}</p>` : ''}
+                    <button onclick="editItem(${index})">ערוך</button>
+                    <button onclick="deleteItem(${index})" class="delete-btn">מחק</button>
+                `;
+                itemList.appendChild(itemElement);
+            });
+        }
+
+        function editItem(index) {
+            currentItem = orderData.items[index];
+            orderData.items.splice(index, 1);
+            
+            document.getElementById('productId').value = currentItem.id;
+            document.getElementById('productName').value = currentItem.name;
+            document.getElementById('quantity').value = currentItem.quantity;
+            document.getElementById('unit').value = currentItem.unit;
+            document.getElementById('itemNotes').value = currentItem.notes || '';
+            
+            document.getElementById('summary').classList.add('hidden');
+            document.getElementById('itemDetails').classList.remove('hidden');
+        }
+
+        function deleteItem(index) {
+            orderData.items.splice(index, 1);
+            renderItems();
+        }
+
+        function finalizeOrder() {
+            // כאן תוכל להוסיף את הלוגיקה לשליחת ה-webhook
+            console.log('שולח נתונים:', orderData);
+            alert('ההזמנה נשלחה בהצלחה!');
+            
+            // איפוס הטופס והנתונים
+            orderData = {
+                date: '',
+                customerName: '',
+                notes: '',
+                items: []
+            };
+            
+            document.getElementById('summary').classList.add('hidden');
+            document.getElementById('initialForm').classList.remove('hidden');
+            document.getElementById('date').value = '';
+            document.getElementById('customerName').value = '';
+            document.getElementById('notes').value = '';
+        }
+    </script>
+</body>
+</html>
