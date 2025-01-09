@@ -90,24 +90,32 @@
         }
     </style>
 </head>
-<body>
-    <!-- מסך ראשון - טופס הזמנה -->
-    <div id="initialForm" class="container">
-        <h2>יצירת הזמנה חדשה</h2>
-        <div class="form-group">
-            <label for="date">תאריך *</label>
-            <input type="date" id="date" required>
-        </div>
-        <div class="form-group">
-            <label for="customerName">שם המזמין *</label>
-            <input type="text" id="customerName" required>
-        </div>
-        <div class="form-group">
-            <label for="notes">הערות</label>
-            <textarea id="notes"></textarea>
-        </div>
-        <button onclick="submitInitialForm()">המשך</button>
+<div id="initialForm" class="container">
+    <h2>יצירת הזמנה חדשה</h2>
+    <div class="form-group">
+        <label for="date">תאריך *</label>
+        <input type="date" id="date" required>
     </div>
+    <div class="form-group">
+        <label for="customerName">שם המזמין *</label>
+        <input type="text" id="customerName" required>
+    </div>
+    <div class="form-group">
+        <label for="orderType">סוג הזמנה *</label>
+        <select id="orderType" required>
+            <option value="">בחר סוג הזמנה</option>
+            <option value="פירות וירקות">פירות וירקות</option>
+            <option value="מוצרים יבשים">מוצרים יבשים</option>
+            <option value="חד פעמי">חד פעמי</option>
+            <option value="כימיקליים">כימיקליים</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="notes">הערות</label>
+        <textarea id="notes"></textarea>
+    </div>
+    <button onclick="submitInitialForm()">המשך</button>
+</div>
 
     <!-- מסך שני - סורק ברקוד -->
     <div id="barcodeScanner" class="container hidden">
@@ -159,26 +167,28 @@
         let orderData = {
     date: '',
     customerName: '',
+    orderType: '',
     notes: '',
     items: []
 };
-
+        
 let currentItem = null;
 let html5QrcodeScanner = null;
 
 // טיפול בטופס הראשוני
 function submitInitialForm() {
-    console.log('submitInitialForm נקרא');  // הוסף שורה זו
     const date = document.getElementById('date').value;
     const customerName = document.getElementById('customerName').value;
+    const orderType = document.getElementById('orderType').value;
     
-    if (!date || !customerName) {
+    if (!date || !customerName || !orderType) {
         alert('נא למלא את כל שדות החובה');
         return;
     }
 
     orderData.date = date;
     orderData.customerName = customerName;
+    orderData.orderType = orderType;
     orderData.notes = document.getElementById('notes').value;
 
     document.getElementById('initialForm').classList.add('hidden');
@@ -275,6 +285,7 @@ function showSummary() {
     orderDetails.innerHTML = `
         <p><strong>תאריך:</strong> ${orderData.date}</p>
         <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
+        <p><strong>סוג הזמנה:</strong> ${orderData.orderType}</p>
         ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
         <button onclick="addMoreItems()" class="add-btn">הוסף מוצר נוסף</button>
     `;
