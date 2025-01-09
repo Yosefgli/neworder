@@ -282,6 +282,33 @@ function showSummary() {
     renderItems();
 }
 
+        // פונקציה לעריכת פריט
+function editItem(index) {
+    currentItem = orderData.items[index];
+    
+    // מילוי הטופס בפרטי הפריט הקיים
+    document.getElementById('productId').value = currentItem.id;
+    document.getElementById('productName').value = currentItem.name;
+    document.getElementById('quantity').value = currentItem.quantity;
+    document.getElementById('unit').value = currentItem.unit;
+    document.getElementById('itemNotes').value = currentItem.notes || '';
+    
+    // מחיקת הפריט מהרשימה
+    orderData.items.splice(index, 1);
+    
+    // מעבר למסך עריכת פריט
+    document.getElementById('summary').classList.add('hidden');
+    document.getElementById('itemDetails').classList.remove('hidden');
+}
+
+// פונקציה למחיקת פריט
+function deleteItem(index) {
+    if (confirm('האם אתה בטוח שברצונך למחוק פריט זה?')) {
+        orderData.items.splice(index, 1);
+        renderItems(); // רענון תצוגת הפריטים
+    }
+}
+
 // פונקציה חדשה - חזרה למסך הסריקה להוספת מוצרים
 function addMoreItems() {
     document.getElementById('summary').classList.add('hidden');
