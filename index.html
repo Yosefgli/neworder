@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סורק ברקודים</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+  <!-- דף יצירת הזמנה -->
+  <div class="container" id="orderScreen">
+    <h1>יצירת הזמנה חדשה</h1>
+    <form id="orderForm">
+      <label for="date">תאריך:</label>
+      <input type="date" id="date" required><br><br>
+      
+      <label for="name">שם המזמין:</label>
+      <input type="text" id="name" required><br><br>
+      
+      <label for="notes">הערות:</label>
+      <textarea id="notes"></textarea><br><br>
+      
+      <button type="submit">אישור</button>
+    </form>
+  </div>
+
+  <!-- סריקת ברקוד -->
+  <div id="barcodeScreen" style="display:none;">
+    <h1>סרוק ברקוד</h1>
+    <div id="reader"></div>
+  </div>
+
+  <!-- עורך פרטי מוצר -->
+  <div class="container" id="editScreen" style="display:none;">
+    <h1>עריכת פרטי המוצר</h1>
+    <label for="quantity">כמות:</label>
+    <input type="number" id="quantity" value="1"><br><br>
+    
+    <label for="unit">יחידה:</label>
+    <select id="unit">
+      <option value="kg">קילו</option>
+      <option value="unit">יחידה</option>
+      <option value="liter">ליטר</option>
+    </select><br><br>
+    
+    <label for="editNotes">הערות:</label>
+    <textarea id="editNotes"></textarea><br><br>
+    
+    <button id="saveEditBtn">שמור שינוי</button>
+    <button id="deleteEditBtn">מחק</button>
+  </div>
+
+  <!-- סיום -->
+  <div class="container" id="finalScreen" style="display:none;">
+    <h1>סיום</h1>
+    <ul id="orderList"></ul>
+    <button id="finishBtn">סיים</button>
+  </div>
+
+  <script>
+    let orderData = [];
+
+    // פונקציה למסך יצירת הזמנה
+    document.getElementById("orderForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      let date = document.getElementById("date").value;
+      let name = document.getElementById("name").value;
+      let notes = document.getElementById("notes").value;
+
+      // לאחסן את נתוני ההזמנה
+      orderData.push({ date, name, notes, items: [] });
+
+      // מעבר למסך הברקוד
+      document.getElementById("orderScreen").style.display = "none";
+      document.getElementById("barcodeScreen").style.display = "block";
+
+      // התחלת סריקת ברקוד
+      startScanning();
+    });
+
+    // התחלת סריקת ברקוד
+    function startScanning() {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            {
+                fps: 10, 
+                qrbox: 250 
+            }, 
+            false
+        );
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    // כאשר מצליחים לסרוק את הברקוד
+    function onScanSuccess(decodedText, decodedResult) {
+        let barcodeData = JSON.parse(decodedText); // נתוני הברקוד בפורמט JSON
+        document.getElementById("barcodeScreen").innerHTML = `ID: ${barcodeData.ID} - שם המוצר: ${barcodeData.name}`;
+
+        // הוספת המוצר להזמנה
+        orderData[0].items.push(barcodeData);
+
+        // הצגת מסך העריכה
+        displayEditScreen(barcodeData);
+    }
+
+    // אם קרתה שגיאה במהלך סריקת הברקוד
+    function onScanFailure(error) {
+        console.warn(`שגיאת קוד: ${error}`);
+    }
+
+    // הצגת מסך העריכה
+    function displayEditScreen(product) {
+        document.getElementById("barcodeScreen").style.display = "none";
+        document.getElementById("editScreen").style.display = "block";
+    }
+
+    // שמירת שינוי במוצר
+    document.getElementById("saveEditBtn").addEventListener("click", function() {
+        let quantity = document.getElementById("quantity").value;
+        let unit = document.getElementById("unit").value;
+        let notes = document.getElementById("editNotes").value;
+
+        // עדכון פרטי המוצר
+        let updatedProduct = { ...orderData[0].items[0], quantity, unit, notes };
+        orderData[0].items[0] = updatedProduct;
+
+        // חזרה למסך הברקוד
+        document.getElementById("editScreen").style.display = "none";
+        document.getElementById("barcodeScreen").style.display = "block";
+    });
+
+    // הצגת סיום ההזמנה
+    document.getElementById("finishBtn").addEventListener("click", function() {
+      // הצגת רשימת ההזמנה
+      document.getElementById("barcodeScreen").style.display = "none";
+      document.getElementById("finalScreen").style.display = "block";
+      let orderList = document.getElementById("orderList");
+      orderList.innerHTML = "";
+      
+      orderData[0].items.forEach(item => {
+        let li = document.createElement("li");
+        li.textContent = `${item.name} - ${item.quantity} ${item.unit}`;
+        orderList.appendChild(li);
+      });
+      
+      // שליחה ל-Webhook
+      sendWebhook();
+    });
+
+    // פונקציה לשליחת הנתונים ל-Webhook
+    function sendWebhook() {
+        const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp'; // הכנס את כתובת ה-Webhook שלך כאן
+
+        // הכנת הנתונים לשליחה
+        const data = {
+            order: orderData[0],
+            items: orderData[0].items
+        };
+
+        fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('הנתונים נשלחו בהצלחה:', result);
+            alert('ההזמנה נשלחה בהצלחה!');
+        })
+        .catch(error => {
+            console.error('שגיאה בשליחת הנתונים:', error);
+            alert('הייתה שגיאה בשליחת ההזמנה.');
+        });
+    }
+  </script>
+
+</body>
+</html>
