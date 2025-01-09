@@ -354,6 +354,7 @@ async function finalizeOrder() {
         date: orderData.date,
         customerName: orderData.customerName,
         notes: orderData.notes,
+        orderType: orderData.orderType,
         items: orderData.items
     };
 
@@ -377,6 +378,7 @@ async function finalizeOrder() {
             date: '',
             customerName: '',
             notes: '',
+            orderType: '',
             items: []
         };
         
