@@ -78,6 +78,7 @@
   <script>
     let orderData = [];
     let barcodeData = null;
+    let html5QrcodeScanner;
 
     // פונקציה למסך יצירת הזמנה
     document.getElementById("orderForm").addEventListener("submit", function(event) {
@@ -149,7 +150,10 @@
         document.getElementById("barcodeScreen").style.display = "block";
 
         // מתחילים לסרוק ברקוד נוסף
-        startScanning();
+        setTimeout(() => {
+          html5QrcodeScanner.clear(); // לנקות את הקוד הקודם
+          startScanning(); // להתחיל סריקה חדשה
+        }, 500);
     });
 
     // מחיקת מוצר
@@ -162,7 +166,10 @@
         document.getElementById("barcodeScreen").style.display = "block";
 
         // מתחילים לסרוק ברקוד נוסף
-        startScanning();
+        setTimeout(() => {
+          html5QrcodeScanner.clear(); // לנקות את הקוד הקודם
+          startScanning(); // להתחיל סריקה חדשה
+        }, 500);
     });
 
     // הצגת סיום ההזמנה
