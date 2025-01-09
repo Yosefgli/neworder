@@ -43,7 +43,7 @@
   </div>
 
   <!-- סריקת ברקוד -->
-  <div id="barcodeScreen" style="display:none;">
+  <div id="barcodeScreen">
     <h1>סרוק ברקוד</h1>
     <div id="reader"></div>
   </div>
@@ -66,13 +66,6 @@
     
     <button id="saveEditBtn">שמור שינוי</button>
     <button id="deleteEditBtn">מחק</button>
-  </div>
-
-  <!-- סיום -->
-  <div class="container" id="finalScreen" style="display:none;">
-    <h1>סיום</h1>
-    <ul id="orderList"></ul>
-    <button id="finishBtn">סיים</button>
   </div>
 
   <script>
@@ -120,7 +113,7 @@
         // הוספת המוצר להזמנה
         orderData[0].items.push(barcodeData);
 
-        // הצגת מסך העריכה
+        // הצגת מסך העריכה של המוצר
         displayEditScreen(barcodeData);
     }
 
@@ -172,51 +165,30 @@
         }, 500);
     });
 
-    // הצגת סיום ההזמנה
-    document.getElementById("finishBtn").addEventListener("click", function() {
-      // הצגת רשימת ההזמנה
-      document.getElementById("barcodeScreen").style.display = "none";
-      document.getElementById("finalScreen").style.display = "block";
-      let orderList = document.getElementById("orderList");
-      orderList.innerHTML = "";
-      
-      orderData[0].items.forEach(item => {
-        let li = document.createElement("li");
-        li.textContent = `${item.name} - ${item.quantity} ${item.unit}`;
-        orderList.appendChild(li);
-      });
-      
-      // שליחה ל-Webhook
-      sendWebhook();
-    });
-
-    // פונקציה לשליחת הנתונים ל-Webhook
+    // שליחת וובהוק עם נתוני ההזמנה
     function sendWebhook() {
-        const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp'; // הכנס את כתובת ה-Webhook שלך כאן
-
-        // הכנת הנתונים לשליחה
-        const data = {
-            order: orderData[0],
-            items: orderData[0].items
-        };
-
-        fetch(webhookUrl, {
+        fetch('https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(orderData)
         })
         .then(response => response.json())
-        .then(result => {
-            console.log('הנתונים נשלחו בהצלחה:', result);
-            alert('ההזמנה נשלחה בהצלחה!');
+        .then(data => {
+            console.log("הנתונים נשלחו בהצלחה!", data);
         })
         .catch(error => {
-            console.error('שגיאה בשליחת הנתונים:', error);
-            alert('הייתה שגיאה בשליחת ההזמנה.');
+            console.error("שגיאה בשליחה לוובהוק", error);
         });
     }
+
+    // כפתור סיום ושליחת וובהוק
+    document.getElementById("finishButton").addEventListener("click", function() {
+        sendWebhook(); // שולח את הנתונים
+        alert("ההזמנה נשלחה בהצלחה!");
+    });
+
   </script>
 
 </body>
