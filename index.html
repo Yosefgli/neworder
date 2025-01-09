@@ -335,43 +335,28 @@ function renderItems() {
     });
 }
 
-// סיום והגשת ההזמנה - פונקציה מעודכנת
 async function finalizeOrder() {
     const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp';
-    const baseOrderData = {
+    
+    // הכנת אובייקט הנתונים המלא
+    const orderDataToSend = {
         date: orderData.date,
         customerName: orderData.customerName,
-        notes: orderData.notes
+        notes: orderData.notes,
+        items: orderData.items
     };
 
     try {
-        // שליחת כל פריט בנפרד
-        for (const item of orderData.items) {
-            const bundleData = {
-                ...baseOrderData,
-                item: {
-                    id: item.id,
-                    name: item.name,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                    notes: item.notes
-                }
-            };
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderDataToSend)
+        });
 
-            const response = await fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(bundleData)
-            });
-
-            if (!response.ok) {
-                throw new Error(`שגיאת שרת בשליחת פריט ${item.name}: ${response.status}`);
-            }
-
-            // המתנה קצרה בין שליחות כדי לא להעמיס על השרת
-            await new Promise(resolve => setTimeout(resolve, 100));
+        if (!response.ok) {
+            throw new Error(`שגיאת שרת: ${response.status}`);
         }
 
         alert('ההזמנה נשלחה בהצלחה!');
