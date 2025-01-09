@@ -77,6 +77,7 @@
 
   <script>
     let orderData = [];
+    let barcodeData = null;
 
     // פונקציה למסך יצירת הזמנה
     document.getElementById("orderForm").addEventListener("submit", function(event) {
@@ -112,7 +113,7 @@
 
     // כאשר מצליחים לסרוק את הברקוד
     function onScanSuccess(decodedText, decodedResult) {
-        let barcodeData = JSON.parse(decodedText); // נתוני הברקוד בפורמט JSON
+        barcodeData = JSON.parse(decodedText); // נתוני הברקוד בפורמט JSON
         document.getElementById("barcodeScreen").innerHTML = `ID: ${barcodeData.ID} - שם המוצר: ${barcodeData.name}`;
 
         // הוספת המוצר להזמנה
@@ -140,12 +141,28 @@
         let notes = document.getElementById("editNotes").value;
 
         // עדכון פרטי המוצר
-        let updatedProduct = { ...orderData[0].items[0], quantity, unit, notes };
-        orderData[0].items[0] = updatedProduct;
+        let updatedProduct = { ...barcodeData, quantity, unit, notes };
+        orderData[0].items[orderData[0].items.length - 1] = updatedProduct;
 
         // חזרה למסך הברקוד
         document.getElementById("editScreen").style.display = "none";
         document.getElementById("barcodeScreen").style.display = "block";
+
+        // מתחילים לסרוק ברקוד נוסף
+        startScanning();
+    });
+
+    // מחיקת מוצר
+    document.getElementById("deleteEditBtn").addEventListener("click", function() {
+        // מחיקת המוצר מההזמנה
+        orderData[0].items.pop();
+
+        // חזרה למסך הברקוד
+        document.getElementById("editScreen").style.display = "none";
+        document.getElementById("barcodeScreen").style.display = "block";
+
+        // מתחילים לסרוק ברקוד נוסף
+        startScanning();
     });
 
     // הצגת סיום ההזמנה
