@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת הזמנות</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -75,6 +76,18 @@
             font-size: 100px;
             margin-bottom: 20px;
         }
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #reader video {
+            max-width: 100%;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -98,13 +111,10 @@
 
     <!-- מסך שני - סורק ברקוד -->
     <div id="barcodeScanner" class="container hidden">
-        <div class="barcode-container">
-            <div class="barcode-icon">📱</div>
-            <button onclick="simulateScan()">סרוק ברקוד</button>
-        </div>
+        <div id="reader"></div>
+        <div id="scanError" class="error hidden"></div>
         <button onclick="showSummary()" id="finishButton" style="display: none;">סיים הזמנה</button>
     </div>
-
     <!-- מסך שלישי - פרטי פריט -->
     <div id="itemDetails" class="container hidden">
         <h2>פרטי פריט</h2>
@@ -147,137 +157,208 @@
 
     <script>
         let orderData = {
+    date: '',
+    customerName: '',
+    notes: '',
+    items: []
+};
+
+let currentItem = null;
+let html5QrcodeScanner = null;
+
+// טיפול בטופס הראשוני
+function submitInitialForm() {
+    const date = document.getElementById('date').value;
+    const customerName = document.getElementById('customerName').value;
+    
+    if (!date || !customerName) {
+        alert('נא למלא את כל שדות החובה');
+        return;
+    }
+
+    orderData.date = date;
+    orderData.customerName = customerName;
+    orderData.notes = document.getElementById('notes').value;
+
+    document.getElementById('initialForm').classList.add('hidden');
+    document.getElementById('barcodeScanner').classList.remove('hidden');
+    
+    initializeScanner();
+}
+
+// אתחול סורק הברקודים
+function initializeScanner() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+    }
+
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { 
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true
+        }
+    );
+
+    html5QrcodeScanner.render(onScanSuccess, onScanError);
+}
+
+// טיפול בסריקה מוצלחת
+function onScanSuccess(decodedText) {
+    try {
+        const scannedData = JSON.parse(decodedText);
+        if (scannedData.ID && scannedData.name) {
+            currentItem = {
+                id: scannedData.ID,
+                name: scannedData.name
+            };
+
+            document.getElementById('productId').value = currentItem.id;
+            document.getElementById('productName').value = currentItem.name;
+            
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+            }
+            
+            document.getElementById('barcodeScanner').classList.add('hidden');
+            document.getElementById('itemDetails').classList.remove('hidden');
+            document.getElementById('finishButton').style.display = 'block';
+        } else {
+            throw new Error('פורמט לא תקין');
+        }
+    } catch (error) {
+        document.getElementById('scanError').textContent = 'ברקוד לא תקין. נסה שוב.';
+        document.getElementById('scanError').classList.remove('hidden');
+    }
+}
+
+// טיפול בשגיאת סריקה
+function onScanError(error) {
+    console.warn(`שגיאת סריקה: ${error}`);
+}
+
+// שמירת פריט
+function submitItem() {
+    const item = {
+        id: currentItem.id,
+        name: currentItem.name,
+        quantity: document.getElementById('quantity').value,
+        unit: document.getElementById('unit').value,
+        notes: document.getElementById('itemNotes').value
+    };
+
+    orderData.items.push(item);
+    
+    // איפוס הטופס
+    document.getElementById('quantity').value = '1';
+    document.getElementById('unit').value = 'קילו';
+    document.getElementById('itemNotes').value = '';
+    
+    document.getElementById('itemDetails').classList.add('hidden');
+    document.getElementById('barcodeScanner').classList.remove('hidden');
+    
+    initializeScanner();
+}
+
+// הצגת מסך סיכום
+function showSummary() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+    }
+    
+    document.getElementById('barcodeScanner').classList.add('hidden');
+    document.getElementById('summary').classList.remove('hidden');
+    
+    const orderDetails = document.getElementById('orderDetails');
+    orderDetails.innerHTML = `
+        <p><strong>תאריך:</strong> ${orderData.date}</p>
+        <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
+        ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
+    `;
+
+    renderItems();
+}
+
+// רינדור רשימת הפריטים
+function renderItems() {
+    const itemList = document.getElementById('itemList');
+    itemList.innerHTML = '';
+    
+    orderData.items.forEach((item, index) => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'item';
+        itemElement.innerHTML = `
+            <p><strong>שם מוצר:</strong> ${item.name}</p>
+            <p><strong>כמות:</strong> ${item.quantity} ${item.unit}</p>
+            ${item.notes ? `<p><strong>הערות:</strong> ${item.notes}</p>` : ''}
+            <button onclick="editItem(${index})">ערוך</button>
+            <button onclick="deleteItem(${index})" class="delete-btn">מחק</button>
+        `;
+        itemList.appendChild(itemElement);
+    });
+}
+
+// עריכת פריט
+function editItem(index) {
+    currentItem = orderData.items[index];
+    orderData.items.splice(index, 1);
+    
+    document.getElementById('productId').value = currentItem.id;
+    document.getElementById('productName').value = currentItem.name;
+    document.getElementById('quantity').value = currentItem.quantity;
+    document.getElementById('unit').value = currentItem.unit;
+    document.getElementById('itemNotes').value = currentItem.notes || '';
+    
+    document.getElementById('summary').classList.add('hidden');
+    document.getElementById('itemDetails').classList.remove('hidden');
+}
+
+// מחיקת פריט
+function deleteItem(index) {
+    orderData.items.splice(index, 1);
+    renderItems();
+}
+
+// סיום והגשת ההזמנה
+async function finalizeOrder() {
+    try {
+        const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp';
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`שגיאת שרת: ${response.status}`);
+        }
+
+        alert('ההזמנה נשלחה בהצלחה!');
+        
+        // איפוס הטופס והנתונים
+        orderData = {
             date: '',
             customerName: '',
             notes: '',
             items: []
         };
-
-        let currentItem = null;
-
-        function submitInitialForm() {
-            const date = document.getElementById('date').value;
-            const customerName = document.getElementById('customerName').value;
-            
-            if (!date || !customerName) {
-                alert('נא למלא את כל שדות החובה');
-                return;
-            }
-
-            orderData.date = date;
-            orderData.customerName = customerName;
-            orderData.notes = document.getElementById('notes').value;
-
-            document.getElementById('initialForm').classList.add('hidden');
-            document.getElementById('barcodeScanner').classList.remove('hidden');
-        }
-
-        function simulateScan() {
-            // סימולציה של סריקת ברקוד
-            currentItem = {
-                id: 'ITEM' + Math.floor(Math.random() * 1000),
-                name: 'מוצר לדוגמה ' + Math.floor(Math.random() * 100)
-            };
-
-            document.getElementById('productId').value = currentItem.id;
-            document.getElementById('productName').value = currentItem.name;
-            
-            document.getElementById('barcodeScanner').classList.add('hidden');
-            document.getElementById('itemDetails').classList.remove('hidden');
-            document.getElementById('finishButton').style.display = 'block';
-        }
-
-        function submitItem() {
-            const item = {
-                id: currentItem.id,
-                name: currentItem.name,
-                quantity: document.getElementById('quantity').value,
-                unit: document.getElementById('unit').value,
-                notes: document.getElementById('itemNotes').value
-            };
-
-            orderData.items.push(item);
-            
-            // איפוס הטופס
-            document.getElementById('quantity').value = '1';
-            document.getElementById('unit').value = 'קילו';
-            document.getElementById('itemNotes').value = '';
-            
-            document.getElementById('itemDetails').classList.add('hidden');
-            document.getElementById('barcodeScanner').classList.remove('hidden');
-        }
-
-        function showSummary() {
-            document.getElementById('barcodeScanner').classList.add('hidden');
-            document.getElementById('summary').classList.remove('hidden');
-            
-            // הצגת פרטי ההזמנה
-            const orderDetails = document.getElementById('orderDetails');
-            orderDetails.innerHTML = `
-                <p><strong>תאריך:</strong> ${orderData.date}</p>
-                <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
-                ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
-            `;
-
-            renderItems();
-        }
-
-        function renderItems() {
-            const itemList = document.getElementById('itemList');
-            itemList.innerHTML = '';
-            
-            orderData.items.forEach((item, index) => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'item';
-                itemElement.innerHTML = `
-                    <p><strong>שם מוצר:</strong> ${item.name}</p>
-                    <p><strong>כמות:</strong> ${item.quantity} ${item.unit}</p>
-                    ${item.notes ? `<p><strong>הערות:</strong> ${item.notes}</p>` : ''}
-                    <button onclick="editItem(${index})">ערוך</button>
-                    <button onclick="deleteItem(${index})" class="delete-btn">מחק</button>
-                `;
-                itemList.appendChild(itemElement);
-            });
-        }
-
-        function editItem(index) {
-            currentItem = orderData.items[index];
-            orderData.items.splice(index, 1);
-            
-            document.getElementById('productId').value = currentItem.id;
-            document.getElementById('productName').value = currentItem.name;
-            document.getElementById('quantity').value = currentItem.quantity;
-            document.getElementById('unit').value = currentItem.unit;
-            document.getElementById('itemNotes').value = currentItem.notes || '';
-            
-            document.getElementById('summary').classList.add('hidden');
-            document.getElementById('itemDetails').classList.remove('hidden');
-        }
-
-        function deleteItem(index) {
-            orderData.items.splice(index, 1);
-            renderItems();
-        }
-
-        function finalizeOrder() {
-            // כאן תוכל להוסיף את הלוגיקה לשליחת ה-webhook
-            console.log('שולח נתונים:', orderData);
-            alert('ההזמנה נשלחה בהצלחה!');
-            
-            // איפוס הטופס והנתונים
-            orderData = {
-                date: '',
-                customerName: '',
-                notes: '',
-                items: []
-            };
-            
-            document.getElementById('summary').classList.add('hidden');
-            document.getElementById('initialForm').classList.remove('hidden');
-            document.getElementById('date').value = '';
-            document.getElementById('customerName').value = '';
-            document.getElementById('notes').value = '';
-        }
+        
+        // חזרה למסך הראשי
+        document.getElementById('summary').classList.add('hidden');
+        document.getElementById('initialForm').classList.remove('hidden');
+        document.getElementById('date').value = '';
+        document.getElementById('customerName').value = '';
+        document.getElementById('notes').value = '';
+        
+    } catch (error) {
+        alert(`שגיאה בשליחת ההזמנה: ${error.message}`);
+        console.error('שגיאה בשליחת ההזמנה:', error);
+    }
+}
     </script>
 </body>
 </html>
