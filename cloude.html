@@ -275,9 +275,17 @@ function showSummary() {
         <p><strong>תאריך:</strong> ${orderData.date}</p>
         <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
         ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
+        <button onclick="addMoreItems()" class="add-btn">הוסף מוצר נוסף</button>
     `;
 
     renderItems();
+}
+
+// פונקציה חדשה - חזרה למסך הסריקה להוספת מוצרים
+function addMoreItems() {
+    document.getElementById('summary').classList.add('hidden');
+    document.getElementById('barcodeScanner').classList.remove('hidden');
+    initializeScanner();
 }
 
 // רינדור רשימת הפריטים
@@ -299,42 +307,43 @@ function renderItems() {
     });
 }
 
-// עריכת פריט
-function editItem(index) {
-    currentItem = orderData.items[index];
-    orderData.items.splice(index, 1);
-    
-    document.getElementById('productId').value = currentItem.id;
-    document.getElementById('productName').value = currentItem.name;
-    document.getElementById('quantity').value = currentItem.quantity;
-    document.getElementById('unit').value = currentItem.unit;
-    document.getElementById('itemNotes').value = currentItem.notes || '';
-    
-    document.getElementById('summary').classList.add('hidden');
-    document.getElementById('itemDetails').classList.remove('hidden');
-}
-
-// מחיקת פריט
-function deleteItem(index) {
-    orderData.items.splice(index, 1);
-    renderItems();
-}
-
-// סיום והגשת ההזמנה
+// סיום והגשת ההזמנה - פונקציה מעודכנת
 async function finalizeOrder() {
-    try {
-        const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp';
-        
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderData)
-        });
+    const webhookUrl = 'https://hook.integrator.boost.space/jhcclcq64s689rxev4ne5uk9phprgvmp';
+    const baseOrderData = {
+        date: orderData.date,
+        customerName: orderData.customerName,
+        notes: orderData.notes
+    };
 
-        if (!response.ok) {
-            throw new Error(`שגיאת שרת: ${response.status}`);
+    try {
+        // שליחת כל פריט בנפרד
+        for (const item of orderData.items) {
+            const bundleData = {
+                ...baseOrderData,
+                item: {
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    notes: item.notes
+                }
+            };
+
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bundleData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`שגיאת שרת בשליחת פריט ${item.name}: ${response.status}`);
+            }
+
+            // המתנה קצרה בין שליחות כדי לא להעמיס על השרת
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         alert('ההזמנה נשלחה בהצלחה!');
@@ -357,6 +366,27 @@ async function finalizeOrder() {
     } catch (error) {
         alert(`שגיאה בשליחת ההזמנה: ${error.message}`);
         console.error('שגיאה בשליחת ההזמנה:', error);
+    }
+}
+
+// הוספת CSS חדש
+const style = document.createElement('style');
+style.textContent = `
+    .add-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 10px 0;
+    }
+    
+    .add-btn:hover {
+        background-color: #45a049;
+    }
+`;
+document.head.appendChild(style);
     }
 }
     </script>
