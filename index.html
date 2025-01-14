@@ -107,105 +107,105 @@
     </style>
 </head>
 <div id="initialForm" class="container">
-    <h2>יצירת הזמנה חדשה</h2>
+    <h2>Создание нового заказа</h2>
     <div class="form-group">
-        <label for="date">תאריך *</label>
+        <label for="date">Дата *</label>
         <input type="date" id="date" required>
     </div>
     <div class="form-group">
-        <label for="customerName">שם המזמין *</label>
+        <label for="customerName">Имя заказчика *</label>
         <input type="text" id="customerName" required>
     </div>
     <div class="form-group">
-        <label for="orderType">סוג הזמנה *</label>
+        <label for="orderType">Тип заказа *</label>
         <select id="orderType" required>
-            <option value="">בחר סוג הזמנה</option>
-            <option value="פירות וירקות">פירות וירקות</option>
-            <option value="מוצרים יבשים">מוצרים יבשים</option>
-            <option value="חד פעמי">חד פעמי</option>
-            <option value="כימיקליים">כימיקליים</option>
+            <option value="">Выберите тип заказа</option>
+            <option value="Фрукты и овощи">פירות וירקות</option>
+            <option value="Сухие продукты">מוצרים יבשים</option>
+            <option value="Одноразовая посуда">חד פעמי</option>
+            <option value="Химические средства">כימיקליים</option>
         </select>
     </div>
     <div class="form-group">
-        <label for="notes">הערות</label>
+        <label for="notes">Примечания</label>
         <textarea id="notes"></textarea>
     </div>
-    <button onclick="submitInitialForm()">המשך</button>
+    <button onclick="submitInitialForm()">Продолжить</button>
 </div>
 
     <!-- מסך שני - סורק ברקוד -->
      <div id="barcodeScanner" class="container hidden">
         <div id="reader"></div>
         <div id="scanError" class="error hidden"></div>
-        <button onclick="showNewItemForm()" class="secondary-btn">הוסף פריט חדש</button>
-        <button onclick="showSummary()" id="finishButton" style="display: none;">סיים הזמנה</button>
+        <button onclick="showNewItemForm()" class="secondary-btn">Добавить новый товар</button>
+        <button onclick="showSummary()" id="finishButton" style="display: none;">Завершить заказ</button>
     </div>
     <!-- מסך שלישי - פרטי פריט -->
     <div id="itemDetails" class="container hidden">
-        <h2>פרטי פריט</h2>
+        <h2>Детали товара</h2>
         <div class="form-group">
-            <label>מזהה מוצר:</label>
+            <label>Идентификатор товара:</label>
             <input type="text" id="productId" disabled>
         </div>
         <div class="form-group">
-            <label>שם מוצר:</label>
+            <label>Название товара:</label>
             <input type="text" id="productName" disabled>
         </div>
         <div class="form-group">
-            <label>כמות:</label>
+            <label>Количество:</label>
             <input type="number" id="quantity" min="1" value="1">
         </div>
         <div class="form-group">
-            <label>יחידה:</label>
+            <label>Единица измерения:</label>
             <select id="unit">
-                <option value="קילו">קילו</option>
-                <option value="יחידה">יחידה</option>
-                <option value="ליטר">ליטר</option>
-                <option value="מטר">מטר</option>
-                <option value="חבילה">חבילה</option>
+                <option value="кг">קילו</option>
+                <option value="шт">יחידה</option>
+                <option value="л">ליטר</option>
+                <option value="мишок">שק</option>
+                <option value="пачки">חבילה</option>
             </select>
         </div>
         <div class="form-group">
-            <label>הערות:</label>
+            <label>Примечания:</label>
             <textarea id="itemNotes"></textarea>
         </div>
-        <button onclick="submitItem()">אישור</button>
+        <button onclick="submitItem()">Подтвердить</button>
     </div>
 
     <div id="newItemForm" class="container hidden">
-        <h2>הוספת פריט חדש</h2>
+        <h2>Добавление нового товара</h2>
         <div class="form-group">
-            <label>שם מוצר:</label>
+            <label>Название товара:</label>
             <input type="text" id="newProductName" required>
         </div>
         <div class="form-group">
-            <label>כמות:</label>
+            <label>Количество:</label>
             <input type="number" id="newQuantity" min="1" value="1">
         </div>
         <div class="form-group">
-            <label>יחידה:</label>
+            <label>Единица измерения:</label>
             <select id="newUnit">
-                <option value="קילו">קילו</option>
-                <option value="יחידה">יחידה</option>
-                <option value="ליטר">ליטר</option>
-                <option value="מטר">מטר</option>
-                <option value="חבילה">חבילה</option>
+                <option value="кг">קילו</option>
+                <option value="шт">יחידה</option>
+                <option value="л">ליטר</option>
+                <option value="мишок">שק</option>
+                <option value="пачки">חבילה</option>
             </select>
         </div>
         <div class="form-group">
-            <label>הערות:</label>
+            <label>Примечания:</label>
             <textarea id="newItemNotes"></textarea>
         </div>
-        <button onclick="submitNewItem()">אישור</button>
-        <button onclick="cancelNewItem()" class="secondary-btn">ביטול</button>
+        <button onclick="submitNewItem()">Подтвердить</button>
+        <button onclick="cancelNewItem()" class="secondary-btn">Отмена</button>
     </div>
 
     <!-- מסך רביעי - סיכום -->
     <div id="summary" class="container hidden">
-        <h2>סיכום הזמנה</h2>
+        <h2>Сводка заказа</h2>
         <div id="orderDetails"></div>
         <div id="itemList" class="item-list"></div>
-        <button onclick="finalizeOrder()">שלח הזמנה</button>
+        <button onclick="finalizeOrder()">Отправить заказ</button>
     </div>
 
     <script>
@@ -281,17 +281,17 @@ function onScanSuccess(decodedText) {
             document.getElementById('itemDetails').classList.remove('hidden');
             document.getElementById('finishButton').style.display = 'block';
         } else {
-            throw new Error('פורמט לא תקין');
+            throw new Error('Некорректный формат');
         }
     } catch (error) {
-        document.getElementById('scanError').textContent = 'ברקוד לא תקין. נסה שוב.';
+        document.getElementById('scanError').textContent = 'Некорректный штрихкод. Попробуйте снова.';
         document.getElementById('scanError').classList.remove('hidden');
     }
 }
 
 // טיפול בשגיאת סריקה
 function onScanError(error) {
-    console.warn(`שגיאת סריקה: ${error}`);
+    console.warn(`Ошибка сканирования: ${error}`);
 }
 
 // שמירת פריט
@@ -307,8 +307,8 @@ function submitItem() {
     orderData.items.push(item);
     
     // איפוס הטופס
-    document.getElementById('quantity').value = '1';
-    document.getElementById('unit').value = 'קילו';
+    document.getElementById('quantity').value = '';
+    document.getElementById('unit').value = '';
     document.getElementById('itemNotes').value = '';
     
     document.getElementById('itemDetails').classList.add('hidden');
@@ -328,11 +328,11 @@ function showSummary() {
     
     const orderDetails = document.getElementById('orderDetails');
     orderDetails.innerHTML = `
-        <p><strong>תאריך:</strong> ${orderData.date}</p>
-        <p><strong>שם המזמין:</strong> ${orderData.customerName}</p>
-        <p><strong>סוג הזמנה:</strong> ${orderData.orderType}</p>
-        ${orderData.notes ? `<p><strong>הערות:</strong> ${orderData.notes}</p>` : ''}
-        <button onclick="addMoreItems()" class="add-btn">הוסף מוצר נוסף</button>
+        <p><strong>Дата:</strong> ${orderData.date}</p>
+        <p><strong>Имя заказчика:</strong> ${orderData.customerName}</p>
+        <p><strong>Тип заказа:</strong> ${orderData.orderType}</p>
+        ${orderData.notes ? `<p><strong>Примечания:</strong> ${orderData.notes}</p>` : ''}
+        <button onclick="addMoreItems()" class="add-btn">Добавить другой товар</button>
     `;
 
     renderItems();
@@ -359,7 +359,7 @@ function editItem(index) {
 
 // פונקציה למחיקת פריט
 function deleteItem(index) {
-    if (confirm('האם אתה בטוח שברצונך למחוק פריט זה?')) {
+    if (confirm('Вы уверены, что хотите удалить этот товар?')) {
         orderData.items.splice(index, 1);
         renderItems(); // רענון תצוגת הפריטים
     }
@@ -390,7 +390,7 @@ function submitNewItem() {
     const productName = document.getElementById('newProductName').value;
     
     if (!productName) {
-        alert('נא להזין שם מוצר');
+        alert('Пожалуйста, введите название товара.');
         return;
     }
 
@@ -405,8 +405,8 @@ function submitNewItem() {
     orderData.items.push(newItem);
     
     document.getElementById('newProductName').value = '';
-    document.getElementById('newQuantity').value = '1';
-    document.getElementById('newUnit').value = 'קילו';
+    document.getElementById('newQuantity').value = '';
+    document.getElementById('newUnit').value = '';
     document.getElementById('newItemNotes').value = '';
     
     document.getElementById('newItemForm').classList.add('hidden');
@@ -424,11 +424,11 @@ function renderItems() {
         const itemElement = document.createElement('div');
         itemElement.className = 'item';
         itemElement.innerHTML = `
-            <p><strong>שם מוצר:</strong> ${item.name}</p>
-            <p><strong>כמות:</strong> ${item.quantity} ${item.unit}</p>
-            ${item.notes ? `<p><strong>הערות:</strong> ${item.notes}</p>` : ''}
-            <button onclick="editItem(${index})">ערוך</button>
-            <button onclick="deleteItem(${index})" class="delete-btn">מחק</button>
+            <p><strong>Название товара:</strong> ${item.name}</p>
+            <p><strong>Количество:</strong> ${item.quantity} ${item.unit}</p>
+            ${item.notes ? `<p><strong>Примечания:</strong> ${item.notes}</p>` : ''}
+            <button onclick="editItem(${index})">Редактировать</button>
+            <button onclick="deleteItem(${index})" class="delete-btn">Удалить</button>
         `;
         itemList.appendChild(itemElement);
     });
@@ -459,10 +459,10 @@ async function finalizeOrder() {
         });
 
         if (!response.ok) {
-            throw new Error(`שגיאת שרת: ${response.status}`);
+            throw new Error(`Ошибка сервера: ${response.status}`);
         }
 
-        alert('ההזמנה נשלחה בהצלחה!');
+        alert('Заказ успешно отправлен!');
         
         orderData = {
             date: '',
@@ -479,8 +479,8 @@ async function finalizeOrder() {
         document.getElementById('notes').value = '';
         
     } catch (error) {
-        alert(`שגיאה בשליחת ההזמנה: ${error.message}`);
-        console.error('שגיאה בשליחת ההזמנה:', error);
+        alert(`Ошибка при отправке заказа: ${error.message}`);
+        console.error('Ошибка при отправке заказа:', error);
     }
 }
         
